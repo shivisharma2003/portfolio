@@ -6,7 +6,6 @@ import {
   BallCollider,
   Physics,
   RigidBody,
-  CylinderCollider,
   type RapierRigidBody,
 } from "@react-three/rapier";
 
