@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BMI Data Analysis & Visualization</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --card: #1c2128;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #7d8590;
+    --green: #3fb950;
+    --yellow: #d29922;
+    --orange: #f0883e;
+    --red: #f85149;
+    --blue: #58a6ff;
+    --purple: #bc8cff;
+    --teal: #39d353;
+    --accent: #58a6ff;
+    --bmi-healthy: #3fb950;
+    --bmi-over: #f0883e;
+    --bmi-obese: #f85149;
+    --bmi-under: #58a6ff;
+    --font-mono: 'Space Mono', monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Space Grotesk',sans-serif; font-size:13px; min-height:100vh; }
+
+  /* HEADER */
+  .header { background:var(--surface); border-bottom:1px solid var(--border); padding:16px 28px; display:flex; justify-content:space-between; align-items:center; }
+  .header-left { display:flex; align-items:center; gap:14px; }
+  .py-badge { background:#1f6feb; color:white; font-family:var(--font-mono); font-size:11px; padding:4px 10px; border-radius:6px; }
+  .title-block .title { font-size:18px; font-weight:700; color:var(--text); }
+  .title-block .sub { font-size:11px; color:var(--muted); margin-top:2px; font-family:var(--font-mono); }
+  .header-right { display:flex; gap:8px; align-items:center; }
+  .tag { padding:3px 10px; border-radius:12px; font-size:10px; font-weight:600; font-family:var(--font-mono); border:1px solid; }
+  .tag-green { color:var(--green); border-color:rgba(63,185,80,.3); background:rgba(63,185,80,.1); }
+  .tag-blue { color:var(--blue); border-color:rgba(88,166,255,.3); background:rgba(88,166,255,.1); }
+  .tag-orange { color:var(--orange); border-color:rgba(240,136,62,.3); background:rgba(240,136,62,.1); }
+
+  /* LAYOUT */
+  .main { padding:20px 28px; display:grid; gap:16px; }
+
+  /* CODE-STYLE STATS BAR */
+  .stats-bar { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 20px; display:flex; gap:32px; align-items:center; }
+  .stats-bar-label { font-family:var(--font-mono); font-size:10px; color:var(--muted); text-transform:uppercase; }
+  .stat-item { text-align:center; }
+  .stat-num { font-family:var(--font-mono); font-size:20px; font-weight:700; }
+  .stat-desc { font-size:10px; color:var(--muted); margin-top:2px; }
+  .divider { width:1px; background:var(--border); height:40px; }
+  .pipeline-info { flex:1; font-family:var(--font-mono); font-size:11px; background:var(--card); padding:10px 14px; border-radius:8px; border:1px solid var(--border); color:var(--green); line-height:1.7; }
+
+  /* 3 COL */
+  .row3 { display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:16px; }
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .rowfull { display:grid; gap:16px; }
+
+  /* CARD */
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; }
+  .card-title { font-size:13px; font-weight:700; color:var(--text); margin-bottom:2px; display:flex; align-items:center; gap:8px; }
+  .card-sub { font-size:10px; color:var(--muted); font-family:var(--font-mono); margin-bottom:14px; }
+
+  /* HISTOGRAM */
+  .histogram { display:flex; align-items:flex-end; gap:3px; height:100px; }
+  .hist-col { display:flex; flex-direction:column; align-items:center; gap:2px; flex:1; }
+  .hist-bar { width:100%; border-radius:2px 2px 0 0; transition:height .4s ease; }
+  .hist-label { font-size:7px; color:var(--muted); font-family:var(--font-mono); }
+  .hist-val { font-size:7px; color:var(--muted); }
+
+  /* SCATTER */
+  .scatter-label { font-size:9px; color:var(--muted); font-family:var(--font-mono); }
+
+  /* BOX PLOTS */
+  .boxplot-row { display:flex; flex-direction:column; gap:12px; margin-top:8px; }
+  .bp-group { display:flex; align-items:center; gap:12px; }
+  .bp-name { font-size:11px; min-width:60px; font-family:var(--font-mono); }
+  .bp-track { flex:1; height:20px; position:relative; background:transparent; }
+  .bp-whisker-left { position:absolute; left:0; top:50%; transform:translateY(-50%); width:1px; height:12px; }
+  .bp-whisker-right { position:absolute; right:0; top:50%; transform:translateY(-50%); width:1px; height:12px; }
+  .bp-line { position:absolute; top:50%; height:1px; }
+  .bp-box { position:absolute; top:25%; height:50%; border-radius:2px; }
+  .bp-median { position:absolute; top:15%; width:2px; height:70%; border-radius:1px; background:white; }
+  .bp-val { font-family:var(--font-mono); font-size:10px; min-width:36px; text-align:right; }
+
+  /* DATA QUALITY */
+  .dq-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .dq-item { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:10px 12px; }
+  .dq-label { font-size:10px; color:var(--muted); font-family:var(--font-mono); margin-bottom:6px; }
+  .dq-val { font-family:var(--font-mono); font-size:16px; font-weight:700; }
+  .dq-bar { margin-top:6px; height:3px; background:var(--border); border-radius:2px; overflow:hidden; }
+  .dq-fill { height:100%; border-radius:2px; }
+
+  /* VIOLIN PROXY */
+  .violin-wrap { display:flex; gap:16px; align-items:flex-end; justify-content:space-around; height:120px; }
+  .violin-col { display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .violin-shape { border-radius:40% 40% 0 0; }
+  .violin-label { font-size:9px; font-family:var(--font-mono); color:var(--muted); }
+
+  /* MISSING DATA */
+  .missing-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .missing-col { font-family:var(--font-mono); font-size:10px; min-width:80px; color:var(--text); }
+  .missing-track { flex:1; height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+  .missing-fill { height:100%; border-radius:3px; }
+  .missing-pct { font-family:var(--font-mono); font-size:10px; min-width:30px; text-align:right; }
+
+  /* DESCRIPTION STATS TABLE */
+  .desc-table { width:100%; border-collapse:collapse; font-family:var(--font-mono); font-size:10px; }
+  .desc-table th { color:var(--muted); padding:5px 10px; text-align:left; border-bottom:1px solid var(--border); text-transform:uppercase; letter-spacing:.5px; }
+  .desc-table td { padding:7px 10px; border-bottom:1px solid rgba(48,54,61,.5); }
+  .desc-table tr:last-child td { border:none; }
+  .desc-table td:first-child { color:var(--blue); }
+
+  @keyframes slideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  .card { animation:slideUp .35s ease both; }
+  .card:nth-child(2) { animation-delay:.05s; }
+  .card:nth-child(3) { animation-delay:.1s; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <span class="py-badge">🐍 Python</span>
+    <div class="title-block">
+      <div class="title">BMI Data Analysis & Visualization Pipeline</div>
+      <div class="sub">Pandas · NumPy · Matplotlib · Seaborn &nbsp;|&nbsp; Nov – Dec 2023</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="tag tag-green">✓ 1,000+ Records</span>
+    <span class="tag tag-blue">15% Missing → Resolved</span>
+    <span class="tag tag-orange">5 Pub-Ready Plots</span>
+  </div>
+</div>
+
+<div class="main">
+  <!-- PIPELINE STATS BAR -->
+  <div class="stats-bar">
+    <div class="stat-item"><div class="stat-num" style="color:var(--blue)">1,048</div><div class="stat-desc">Records loaded</div></div>
+    <div class="divider"></div>
+    <div class="stat-item"><div class="stat-num" style="color:var(--orange)">157</div><div class="stat-desc">Missing values</div></div>
+    <div class="divider"></div>
+    <div class="stat-item"><div class="stat-num" style="color:var(--green)">0</div><div class="stat-desc">After cleaning</div></div>
+    <div class="divider"></div>
+    <div class="stat-item"><div class="stat-num" style="color:var(--yellow)">4</div><div class="stat-desc">Formats standardized</div></div>
+    <div class="divider"></div>
+    <div class="stat-item"><div class="stat-num" style="color:var(--purple)">5</div><div class="stat-desc">Visualizations</div></div>
+    <div class="divider"></div>
+    <div class="pipeline-info">
+      <span style="color:var(--muted)"># </span>Pipeline execution log<br>
+      <span style="color:var(--blue)">df</span> = pd.read_csv(<span style="color:var(--orange)">'bmi_dataset.csv'</span>)  <span style="color:var(--muted)"># 1048 rows × 12 cols</span><br>
+      <span style="color:var(--blue)">df</span>.fillna(df.mean(), inplace=<span style="color:var(--orange)">True</span>)  <span style="color:var(--muted)"># resolved 157 NaN</span><br>
+      <span style="color:var(--green)">✓ Data quality validated · Ready for analysis</span>
+    </div>
+  </div>
+
+  <!-- ROW 1: Histogram + Scatter + Box -->
+  <div class="row3">
+    <!-- BMI Distribution Histogram -->
+    <div class="card">
+      <div class="card-title">📊 BMI Distribution Histogram</div>
+      <div class="card-sub">seaborn.histplot() · n=1048 · bins=20</div>
+      <div class="histogram">
+        <div class="hist-col"><div class="hist-bar" style="height:12%;background:var(--bmi-under)"></div><div class="hist-label">14</div></div>
+        <div class="hist-col"><div class="hist-bar" style="height:18%;background:var(--bmi-under)"></div><div class="hist-label">16</div></div>
+        <div class="hist-col"><div class="hist-bar" style="height:30%;background:var(--bmi-under)"></div><div class="hist-label">18</div></div>
+        <div class="hist-col"><div class="hist-bar" style="height:52%;background:var(--bmi-healthy)"></div><div class="hist-label">20</div></div>
+        <div class="hist-col"><div class="hist-bar" style="height:78%;background:var(--bmi-healthy)"></div><div class="hist-label">22</div></div>
+        <div class="hist-col"><div class="hist-bar" style="height:95%;background:var(--bmi-healthy)"></div><div class="hist-label">24</div></div>
+        <div class="hist-col"><div class="hist-bar" style="height:100%;background:var(--bmi-over)"></div><div class="hist-label">26</div></div>
+        <div class="hist-col"><div class="hist-bar" style="height:88%;background:var(--bmi-over)"></div><div class="hist-label">28</div></div>
+        <div class="hist-col"><div class="hist-bar" style="height:72%;background:var(--bmi-obese)"></div><div class="hist-label">30</div></div>
+        <div class="hist-col"><div class="hist-bar" style="height:55%;background:var(--bmi-obese)"></div><div class="hist-label">32</div></div>
+        <div class="hist-col"><div class="hist-bar" style="height:38%;background:var(--bmi-obese)"></div><div class="hist-label">34</div></div>
+        <div class="hist-col"><div class="hist-bar" style="height:22%;background:var(--bmi-obese)"></div><div class="hist-label">36</div></div>
+        <div class="hist-col"><div class="hist-bar" style="height:12%;background:var(--bmi-obese)"></div><div class="hist-label">38</div></div>
+        <div class="hist-col"><div class="hist-bar" style="height:6%;background:var(--bmi-obese)"></div><div class="hist-label">40</div></div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:10px">
+        <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--muted)"><div style="width:8px;height:8px;border-radius:2px;background:var(--bmi-under)"></div>Underweight</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--muted)"><div style="width:8px;height:8px;border-radius:2px;background:var(--bmi-healthy)"></div>Healthy</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--muted)"><div style="width:8px;height:8px;border-radius:2px;background:var(--bmi-over)"></div>Overweight</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--muted)"><div style="width:8px;height:8px;border-radius:2px;background:var(--bmi-obese)"></div>Obese</div>
+      </div>
+    </div>
+
+    <!-- Height vs Weight Scatter -->
+    <div class="card">
+      <div class="card-title">📈 Height vs Weight Scatter</div>
+      <div class="card-sub">matplotlib.scatter() · colored by BMI category</div>
+      <svg width="100%" height="100" viewBox="0 0 260 100">
+        <line x1="30" y1="10" x2="30" y2="85" stroke="#30363d"/>
+        <line x1="30" y1="85" x2="255" y2="85" stroke="#30363d"/>
+        <circle cx="55" cy="75" r="3" fill="var(--bmi-under)" opacity=".8"/>
+        <circle cx="105" cy="60" r="3" fill="var(--bmi-healthy)" opacity=".8"/>
+        <circle cx="160" cy="40" r="3" fill="var(--bmi-over)" opacity=".8"/>
+        <circle cx="220" cy="20" r="3" fill="var(--bmi-obese)" opacity=".8"/>
+      </svg>
+    </div>
+
+    <!-- Box Plot -->
+    <div class="card">
+      <div class="card-title">🎻 BMI by Gender — Box Plot</div>
+      <div class="card-sub">seaborn.boxplot() · Statistical variance</div>
+      <div class="boxplot-row">
+        <div class="bp-group">
+          <div class="bp-name" style="color:var(--blue)">Male</div>
+          <div class="bp-track">
+            <div class="bp-line" style="left:5%;width:90%;background:var(--blue);opacity:.3;top:50%"></div>
+            <div class="bp-box" style="left:25%;width:50%;background:rgba(88,166,255,.25);border:1.5px solid var(--blue)"></div>
+          </div>
+        </div>
+        <div class="bp-group">
+          <div class="bp-name" style="color:var(--orange)">Female</div>
+          <div class="bp-track">
+            <div class="bp-line" style="left:8%;width:84%;background:var(--orange);opacity:.3;top:50%"></div>
+            <div class="bp-box" style="left:28%;width:44%;background:rgba(240,136,62,.25);border:1.5px solid var(--orange)"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 2: Descriptive Stats + Data Quality Report -->
+  <div class="row2">
+    <!-- Descriptive Stats -->
+    <div class="card">
+      <div class="card-title">📋 Descriptive Statistics Summary</div>
+      <div class="card-sub">df.describe() output</div>
+      <table class="desc-table">
+        <tr><th>Variable</th><th>Mean</th><th>Std</th><th>Max</th></tr>
+        <tr><td>BMI</td><td>27.3</td><td>4.6</td><td>42.8</td></tr>
+        <tr><td>Height</td><td>168.4</td><td>9.2</td><td>192</td></tr>
+        <tr><td>Weight</td><td>77.6</td><td>15.3</td><td>128</td></tr>
+      </table>
+    </div>
+
+    <!-- Data Quality + Missing Values Report -->
+    <div class="card">
+      <div class="card-title">🔧 Data Cleaning Pipeline Report</div>
+      <div class="card-sub">15% missing values resolved</div>
+      <div class="dq-grid">
+        <div class="dq-item">
+          <div class="dq-label">Missing</div>
+          <div class="dq-val" style="color:var(--orange)">157</div>
+        </div>
+        <div class="dq-item">
+          <div class="dq-label">Resolved</div>
+          <div class="dq-val" style="color:var(--green)">0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
